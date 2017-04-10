@@ -19,7 +19,6 @@ def csv_log_to_image_filename(data_dir, csv_filename):
 
 def generator(data_dir, samples, batch_size=32):
     num_samples = len(samples)
-    steering_correction = 0.2
     while 1:
         sklearn.utils.shuffle(samples)
         for offset in range(0, num_samples, batch_size):
@@ -28,34 +27,14 @@ def generator(data_dir, samples, batch_size=32):
             images = []
             measurements = []
             for batch_sample in batch_samples:
-                measurement = float(batch_sample[3])
-
-                center_file = csv_log_to_image_filename(data_dir,
-                                                        batch_sample[0])
-                image = cv2.imread(center_file)
+                filename = csv_log_to_image_filename(data_dir,
+                                                     batch_sample[0])
+                image = cv2.imread(filename)
                 if image is not None:
                     images.append(image)
-                    measurements.append(measurement)
+                    measurements.append(batch_sample[1])
                 else:
-                    print("File " + center_file + " is missing.")
-
-                left_file = csv_log_to_image_filename(data_dir,
-                                                      batch_sample[1])
-                left_image = cv2.imread(left_file)
-                if left_image is not None:
-                    images.append(left_image)
-                    measurements.append(measurement + steering_correction)
-                else:
-                    print("File " + left_file + " is missing.")
-
-                right_file = csv_log_to_image_filename(data_dir,
-                                                       batch_sample[2])
-                right_image = cv2.imread(right_file)
-                if right_image is not None:
-                    images.append(right_image)
-                    measurements.append(measurement - steering_correction)
-                else:
-                    print("File " + right_file + " is missing.")
+                    print("File " + filename + " is missing.")
 
             X_data = np.array(images)
             y_data = np.array(measurements)
@@ -68,8 +47,10 @@ def main(args=None):
 
     print("Loading csv data...")
 
+    steering_correction = 0.2
+
     data_dir = args[0]
-    lines = []
+    samples = []
     with open(path.join(data_dir, "driving_log.csv")) as csvfile:
         reader = csv.reader(csvfile)
         first_line = True
@@ -77,9 +58,13 @@ def main(args=None):
             if first_line:
                 first_line = False
                 continue
-            lines.append(line)
 
-    train_samples, validation_samples = train_test_split(lines, test_size=0.2)
+            measurement = float(line[3])
+            samples.append([line[0], measurement])
+            samples.append([line[1], measurement + steering_correction])
+            samples.append([line[2], measurement - steering_correction])
+
+    train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
     train_generator = generator(data_dir, train_samples, batch_size=32)
     validation_generator = generator(data_dir,
