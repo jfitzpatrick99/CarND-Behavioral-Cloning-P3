@@ -18,7 +18,9 @@ def main(args=None):
     images = []
     measurements = []
 
-    with open(path.join(args[0], "driving_log.csv")) as csvfile:
+    data_dir = path.abspath(args[0])
+
+    with open(path.join(data_dir, "driving_log.csv")) as csvfile:
         reader = csv.reader(csvfile)
         first_line = True
         for line in reader:
@@ -26,7 +28,12 @@ def main(args=None):
                 first_line = False
                 continue
 
-            image = cv2.imread(path.join(args[0], line[0].strip()))
+            image_file = line[0].strip()
+            image_file_parts = image_file.split("/")
+            rel_image_file = \
+                image_file_parts[len(image_file_parts)-2:len(image_file_parts)]
+
+            image = cv2.imread(path.join(args[0], "/".join(rel_image_file)))
             measurement = float(line[3])
 
             images.append(image)
