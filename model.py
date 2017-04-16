@@ -136,7 +136,7 @@ def main(args=None):
                                   nb_val_samples=len(validation_samples),
                                   nb_epoch=3)
 
-    model.save("model.hd5")
+    model.save("model.h5")
 
     # Plot the training and validation loss
     # This code taken from the classroom example

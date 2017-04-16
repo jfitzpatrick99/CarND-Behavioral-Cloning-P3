@@ -126,6 +126,17 @@ the track after collecting my own data and did not need to resort to using
 additional pre-processing techniques or introducing additional layers into
 the network.
 
+To determine the optimal number of epochs, I created a plot showing the
+training and validation loss against the current epoch number.
+
+![Training and validation loss over time](images/training_validation_loss_plot.jpg)
+
+After epoch 6 the network starts overfitting as evidenced by the declining
+training loss and increasing validation loss. After determining this I trained
+my network for 6 epochs only. While the resulting model did not do too badly,
+the car tires did go over the lane lines. I found that training for 3 epochs
+seemed to give the best results.
+
 ## Model Architecture
 
 As mentioned above, my solution uses the network architecture developed by
@@ -180,23 +191,23 @@ to train the model in detail.
 
 ### Sample Dataset Setup
 
-Lines 90-102 is where the list of samples is populated. Each entry in the
+Lines 94-106 is where the list of samples is populated. Each entry in the
 samples list is a tuple of ground truth steering angle and the corresponding
-image file. Line 100 appends the sample for the center camera, line 101 appends
+image file. Line 104 appends the sample for the center camera, line 105 appends
 the sample for the left-hand camera applying a positive steering angle
-correction and line 102 appends the sample for the right-hand camera applying
+correction and line 106 appends the sample for the right-hand camera applying
 a negative steering angle correction. The steering correction angle to use is
-defined on line 84.
+defined on line 88.
 
 ### Model Definition
 
-The model is defined on lines 112 to 126. On line 113 a cropping layer is added
-followed by the normalization layer on line 115. Lines 116 to 126 then define
+The model is defined on lines 116 to 130. On line 117 a cropping layer is added
+followed by the normalization layer on line 119. Lines 120 to 130 then define
 the neural network architecture developed by Nvidia as mentioned above.
 
 ### Model Training
 
-The model is trained on lines 128 to 135. As can be seen on line 128, the loss
+The model is trained on lines 132 to 137. As can be seen on line 132, the loss
 function requested in the mean squared error and the adam optimizer is used.
 
 ### Generators
@@ -211,14 +222,14 @@ would quadruple this amount. This meant that loading the entire dataset into
 memory was not going to work. To resolve this I made use of python generators
 which allowed for my implementation to load images into memory on-demand.
 
-My data generator function is defined on lines 27 to 59. It takes as arguments
+My data generator function is defined on lines 31 to 63. It takes as arguments
 the directory containing the data, the array containing all of the samples as
 tuples and a batch size argument specifying the number of images to yeild on
-each call to the generator. The main generator loop starts on line 40. On line
-41 the list of samples is shuffled. The for loop on line 42 iterates through
+each call to the generator. The main generator loop starts on line 44. On line
+45 the list of samples is shuffled. The for loop on line 46 iterates through
 the entire dataset passed to the generator stepping by the batch size. The
-inner for loop starting on line 47 loads each image in the batch populating
-lists of images and measurements for each image. On line 59 the current batch
+inner for loop starting on line 51 loads each image in the batch populating
+lists of images and measurements for each image. On line 63 the current batch
 to yeild is returned.
 
 This approach illusrates the classic time-space tradeoff encountered for many
@@ -241,7 +252,55 @@ take an absolute filename as provided in the csv log file and convert it to
 a filename relative to the data directory. This was needed so that data could
 be collected on one computer and the network trained on another computer.
 
-## Driving the Car Around the Track Autonomously
+### Example Training Output
+
+The following shows an example invocation to train the model on a Amazon GPU
+instance:
+
+```
+(carnd-term1) carnd@ip-172-31-8-241:~/CarND-Behavioral-Cloning-P3$ python model.py my_data
+Using TensorFlow backend.
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcublas.so locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcudnn.so locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcufft.so locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcuda.so.1 locally
+I tensorflow/stream_executor/dso_loader.cc:128] successfully opened CUDA library libcurand.so locally
+Loading csv data...
+Training...
+Epoch 1/10
+I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:937] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:885] Found device 0 with properties: 
+name: GRID K520
+major: 3 minor: 0 memoryClockRate (GHz) 0.797
+pciBusID 0000:00:03.0
+Total memory: 3.94GiB
+Free memory: 3.91GiB
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:906] DMA: 0 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:916] 0:   Y 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:975] Creating TensorFlow device (/gpu:0) -> (device: 0, name: GRID K520, pci bus id: 0000:00:03.0)
+51660/51660 [==============================] - 144s - loss: 0.0145 - val_loss: 0.0116
+Epoch 2/10
+51660/51660 [==============================] - 137s - loss: 0.0090 - val_loss: 0.0078
+Epoch 3/10
+51660/51660 [==============================] - 136s - loss: 0.0062 - val_loss: 0.0059
+Epoch 4/10
+51660/51660 [==============================] - 138s - loss: 0.0047 - val_loss: 0.0052
+Epoch 5/10
+51660/51660 [==============================] - 135s - loss: 0.0038 - val_loss: 0.0048
+Epoch 6/10
+51660/51660 [==============================] - 137s - loss: 0.0033 - val_loss: 0.0046
+Epoch 7/10
+51660/51660 [==============================] - 137s - loss: 0.0029 - val_loss: 0.0049
+Epoch 8/10
+51660/51660 [==============================] - 138s - loss: 0.0026 - val_loss: 0.0048
+Epoch 9/10
+51660/51660 [==============================] - 138s - loss: 0.0025 - val_loss: 0.0046
+Epoch 10/10
+51660/51660 [==============================] - 138s - loss: 0.0022 - val_loss: 0.0045
+All done.
+```
+
+### Driving the Car Around the Track Autonomously
 
 After starting the simulator in autonomous mode, my model can be used to drive
 the car around the track by executing the following command:
@@ -249,3 +308,4 @@ the car around the track by executing the following command:
 ```
 python drive.py model.h5
 ```
+
