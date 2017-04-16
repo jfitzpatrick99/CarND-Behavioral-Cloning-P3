@@ -8,6 +8,7 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Convolution2D, Cropping2D
 from sklearn.model_selection import train_test_split
 import sklearn
+import matplotlib.pyplot as plt
 
 
 def csv_log_to_image_filename(data_dir, csv_filename):
@@ -126,13 +127,24 @@ def main(args=None):
     model.add(Dense(1))
 
     model.compile(loss="mse", optimizer="adam")
-    model.fit_generator(train_generator,
-                        samples_per_epoch=len(train_samples),
-                        validation_data=validation_generator,
-                        nb_val_samples=len(validation_samples),
-                        nb_epoch=3)
+    history = model.fit_generator(train_generator,
+                                  samples_per_epoch=len(train_samples),
+                                  validation_data=validation_generator,
+                                  nb_val_samples=len(validation_samples),
+                                  nb_epoch=3)
 
     model.save("model.hd5")
+
+    # Plot the training and validation loss
+    # This code taken from the classroom example
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model mean squared error loss')
+    plt.ylabel('mean squared error loss')
+    plt.xlabel('epoch')
+    plt.legend(['training set', 'validation set'], loc='upper right')
+    plt.savefig("training_validation_loss_plot.jpg")
+
     print("All done.")
 
 if __name__ == "__main__":

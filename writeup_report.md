@@ -1,129 +1,251 @@
-#**Behavioral Cloning** 
+# Behavioral Cloning
 
-##Writeup Template
+## Introduction
 
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
-**Behavioral Cloning Project**
+This document describes the solution design and neural network architecture
+used for the CarND behavioral cloning project.
 
 The goals / steps of this project are the following:
+
 * Use the simulator to collect data of good driving behavior
 * Build, a convolution neural network in Keras that predicts steering angles from images
 * Train and validate the model with a training and validation set
-* Test that the model successfully drives around track one without leaving the road
+* Test that the model successfully drives around track once without leaving the road
 * Summarize the results with a written report
 
+### Rubric Points
 
-[//]: # (Image References)
+In the sections that follow I will consider the
+[rubric points](https://review.udacity.com/#!/rubrics/432/view) individually
+and describe how I addressed each point in my implementation.  
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+## Solution Design and Approach
 
-## Rubric Points
-###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
+In order to come up with a solution for this project I went through the
+following steps.
 
----
-###Files Submitted & Code Quality
+I started out by building a simple one neuron network that attempted to drive
+the car around the track and was trained on the provided example data. I did
+this to verify that I was able to successfully read the generated data and at
+least have something that would attempt to drive the car. Clearly a single
+neuron network is nowhere near complex enough to predict the steering angles
+needed to drive around the track. For this simple network and each of the
+subsequent networks I tried I settled on using the mean squared error for the
+loss function and an adam optimizer to make parameter updates so it was not
+necessary to tune the learning rate manually.
 
-####1. Submission includes all required files and can be used to run the simulator in autonomous mode
+Next I replaced my single neuron network with a LeNet neural network using the
+ReLu activation and added a pre-processing and data normalization layer at the
+start of the network.
 
-My project includes the following files:
-* model.py containing the script to create and train the model
-* drive.py for driving the car in autonomous mode
-* model.h5 containing a trained convolution neural network 
-* writeup_report.md or writeup_report.pdf summarizing the results
+The pre-processing step involved cropping the images to only include parts of
+the image relevant to navigating around the track.
 
-####2. Submission includes functional code
-Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
-```sh
-python drive.py model.h5
+*Image prior to being cropped:*
+
+![Image prior to being cropped](images/straightaway_center_2017_04_09_14_36_10_753.jpg)
+
+*Same image after being cropped:*
+
+![Image after being cropped](images/straightaway_center_2017_04_09_14_36_10_753_cropped.jpg)
+
+*Note how parts of the image irrevelant to navigation are mostly removed from
+the cropped image.*
+
+The normalization layer simply centered each of the RGB pixel values around 0
+so that instead of each value ranging between 0 and 255, the pixel values
+ranged between -0.5 and 0.5. The formula for this was as follows:
+
+```
+normalized = (pixel / 255) - 0.5
 ```
 
-####3. Submission code is usable and readable
+In addition to cropping and normalization I also augmented the dataset by using
+images from the left and right cameras and also flipping each of the training
+images and then reversing the steering angles for the flipped images. After
+collecting my own dataset I found had a sufficient amount of data that I did
+not need to augment the dataset with flipped images but I did continue to use
+data from the left and right cameras.
 
-The model.py file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
+*Image from center camera on a straightaway:*
 
-###Model Architecture and Training Strategy
+![Image from center camera on a straightaway](images/straightaway_center_2017_04_09_14_36_10_753.jpg)
 
-####1. An appropriate model architecture has been employed
+*Same image from left camera on a straightaway:*
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
+![Image from left camera on a straightaway](images/straightaway_left_2017_04_09_14_36_10_753.jpg)
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+*Compared to the image from the center camera, the steering angle needs to be
+corrected by driving further to the right, or a positive angle.*
 
-####2. Attempts to reduce overfitting in the model
+*Same image from right camera on a straightaway:*
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
+![Image from right camera on a straightaway](images/straightaway_right_2017_04_09_14_36_10_753.jpg)
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+*Compared to the image from the center camera, the steering angle needs to be
+corrected by driving further to the left, or a negative angle.*
 
-####3. Model parameter tuning
+*Image from center camera on a curve:*
 
-The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 25).
+![Image from center camera on a curve](images/curve_center_2017_04_09_14_35_10_516.jpg)
 
-####4. Appropriate training data
+*Image from left camera on a curve:*
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+![Image from left camera on a curve](images/curve_left_2017_04_09_14_35_10_516.jpg)
 
-For details about how I created the training data, see the next section. 
+*Note how in this image the correct steering angle would to drive further to
+the right compared to the image from the center camera.*
 
-###Model Architecture and Training Strategy
+*Image from right camera on a curve:*
 
-####1. Solution Design Approach
+![Image from right camera on a curve](images/curve_right_2017_04_09_14_35_10_516.jpg)
 
-The overall strategy for deriving a model architecture was to ...
+*Note how in this image the correct steering angle would to drive further to
+the left compared to the image from the center camera.*
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+By emperical experiments using a steering correction offset of 0.20 radians or
+11.46 degrees seemed to give the best results.
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+The LeNet network with the augmented dataset seemed to perform a bit better but
+the car was still not able to drive around the track autonomously.
+After experimenting a bit with the LeNet network I decided to move to a more
+complex network architecture developed by the team at Nvidia. This network is
+documented at
+[this link](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/)
 
-To combat the overfitting, I modified the model so that ...
+This network architecture was developed through emperical experiments. After
+implementing this network I trained it again on the provided example data and
+realized some improvement however the car was still not able to navigate
+successfully around the track. At this point I decided to shift my focus onto
+generating my own training data especially given that my model seemed to be
+fitting the data quite nicely. See the section on "Data Collection" for details
+on my data collection strategy.
 
-Then I ... 
+I realized a significant improvement in the ability of the car to drive around
+the track after collecting my own data and did not need to resort to using
+additional pre-processing techniques or introducing additional layers into
+the network.
 
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
+## Model Architecture
 
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+As mentioned above, my solution uses the network architecture developed by
+Nvidia's self-driving car team. For completeness, here is a diagram of the
+neural network architecture:
 
-####2. Final Model Architecture
+![CNN Network Architecture](images/cnn-architecture.png)
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+As you can see, the architecture consists of the following:
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
+* Input Layer
+* Normalization Layer
+* 3 5x5 convolutional layers that use a stride of 2 with output depths of 24,
+  36 and 48
+* 2 3x3 convolutional layers that use an output depth of 64
+* 3 fully connected layers
+* Output layer
 
-![alt text][image1]
+## Data Collection
 
-####3. Creation of the Training Set & Training Process
+My strategy for collecting data was as follows:
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+1. 3 laps of center lane driving both clockwise and counter-clockwise.
+2. 2 laps of recovery driving both clockwise and counter-clockwise and
+   recovering from both the left-hand side and right-hand side of the track.
 
-![alt text][image2]
+Center lane driving involved simply driving car around the track keeping the
+car as close to the center lane as possible (and almost enlisting help from the
+neighbours kids as I realized I was not very good). In the end I managed to
+train myself to keep the car in the middle.
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
+Recovery driving involved driving the car to the edge of a track, but not off
+the track, and then driving back to the center.
 
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
+*Image showing start of recovery from the left:*
 
-Then I repeated this process on track two in order to get more data points.
+![Example start of recovery](images/recovery_start_center_2017_04_09_15_40_50_474.jpg)
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+*Image showing partial recovery from the left:*
 
-![alt text][image6]
-![alt text][image7]
+![Part way through recovery](images/recovery_partial_center_2017_04_09_15_41_08_472.jpg)
 
-Etc ....
+*Image showing completion of recovery from the left:*
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+![Completion of recovery](images/recovery_complete_center_2017_04_09_15_41_17_090.jpg)
 
+## Implementation Details
 
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
+As mentioned in the README, the file [model.py](model.py) contains the source
+code used to train the model. The sections below walk through the code used
+to train the model in detail.
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+### Sample Dataset Setup
+
+Lines 90-102 is where the list of samples is populated. Each entry in the
+samples list is a tuple of ground truth steering angle and the corresponding
+image file. Line 100 appends the sample for the center camera, line 101 appends
+the sample for the left-hand camera applying a positive steering angle
+correction and line 102 appends the sample for the right-hand camera applying
+a negative steering angle correction. The steering correction angle to use is
+defined on line 84.
+
+### Model Definition
+
+The model is defined on lines 112 to 126. On line 113 a cropping layer is added
+followed by the normalization layer on line 115. Lines 116 to 126 then define
+the neural network architecture developed by Nvidia as mentioned above.
+
+### Model Training
+
+The model is trained on lines 128 to 135. As can be seen on line 128, the loss
+function requested in the mean squared error and the adam optimizer is used.
+
+### Generators
+
+The images in the training set are 320x160 pixels with 3 RGB values per pixel.
+To train my model I collected 8036 samples with 3 images per sample, one for
+each of the center, left and right cameras. Loading all of these images into
+memory would therefore require 320x160x3x8036x3 = 3.70 x 10^9 bytes of memory
+or about 3.7 GB exclusive of overhead and assuming each RGB byte value is
+stored as 8 bits. Converting the RGB values to ints or floats during processing
+would quadruple this amount. This meant that loading the entire dataset into
+memory was not going to work. To resolve this I made use of python generators
+which allowed for my implementation to load images into memory on-demand.
+
+My data generator function is defined on lines 27 to 59. It takes as arguments
+the directory containing the data, the array containing all of the samples as
+tuples and a batch size argument specifying the number of images to yeild on
+each call to the generator. The main generator loop starts on line 40. On line
+41 the list of samples is shuffled. The for loop on line 42 iterates through
+the entire dataset passed to the generator stepping by the batch size. The
+inner for loop starting on line 47 loads each image in the batch populating
+lists of images and measurements for each image. On line 59 the current batch
+to yeild is returned.
+
+This approach illusrates the classic time-space tradeoff encountered for many
+Compuer Science problems; using the generator means that the same images will
+be loaded from disk multiple times incurring an IO performance cost at the
+benefit of reduced memory consumption.
+
+### Training / Validation Data Split
+
+To validate the model, 20% of the data using for training is split off into a
+validation dataset. The samples are split into training and validation datasets
+on line 105. Two separate instances of the generator function are defined on
+lines 106 and 107. The generator functions are fed into the neural network for
+training on line 129 where the Keral Model.fit_generator function is used.
+
+### Miscellaneous
+
+The utility function `csv_log_to_image_filename` defined on line 13 is used to
+take an absolute filename as provided in the csv log file and convert it to
+a filename relative to the data directory. This was needed so that data could
+be collected on one computer and the network trained on another computer.
+
+## Driving the Car Around the Track Autonomously
+
+After starting the simulator in autonomous mode, my model can be used to drive
+the car around the track by executing the following command:
+
+```
+python drive.py model.h5
+```
