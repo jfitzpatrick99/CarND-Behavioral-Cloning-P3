@@ -1,4 +1,7 @@
 # model.py - Train a neural network to drive a car in a simulator.
+# Use non-interactive backend
+import matplotlib
+matplotlib.use("Agg")
 import sys
 import csv
 import cv2
