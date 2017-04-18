@@ -123,8 +123,7 @@ on my data collection strategy.
 
 I realized a significant improvement in the ability of the car to drive around
 the track after collecting my own data and did not need to resort to using
-additional pre-processing techniques or introducing additional layers into
-the network.
+additional pre-processing techniques.
 
 To determine the optimal number of epochs, I created a plot showing the
 training and validation loss against the current epoch number.
@@ -136,6 +135,25 @@ training loss and increasing validation loss. After determining this I trained
 my network for 6 epochs only. While the resulting model did not do too badly,
 the car tires did go over the lane lines. I found that training for 3 epochs
 seemed to give the best results.
+
+### Dropout Layers
+
+For my final model I did not use dropout layers. I made this decision for
+two reasons:
+
+1. The trained model not using dropout layers performed the best in my test
+runs around the track in autonomous mode.
+2. I was able to acheive much lower validation error without dropout layers.
+3. The Nvidia architecture I used also did not use dropout layers.
+
+My experiments with dropout layers involved adding them after the convolutional
+layers and the fully connected layers. I tried using dropout rates of 0.50 and
+0.25. In both cases I was not able to realize the same validation error I got
+without using them despite training for 10 epochs (vs 3 epochs without them).
+
+It is possible that placing them differently in the network or varying the
+dropout rates between layers would have made a difference but in my experience
+these layers seemed to make it take much longer to train with worse results.
 
 ## Model Architecture
 
